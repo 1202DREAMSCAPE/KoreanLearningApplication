@@ -1,8 +1,12 @@
 import { writable } from 'svelte/store';
 
 export type ToastKind = 'success' | 'info' | 'warning';
-export type Toast = { id: string; kind: ToastKind; text: string };
-
+export type Toast = {
+  id: string;
+  text: string;
+  kind: 'success' | 'warning' | 'info';
+  ttl?: number; // Time-to-live in milliseconds
+};
 function uuid() {
   return crypto.randomUUID?.() ?? Math.random().toString(36).slice(2);
 }

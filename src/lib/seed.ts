@@ -1,22 +1,16 @@
 // src/lib/seed.ts
-// Seed two decks (Beginner Vocabulary + Intermediate Grammar) with 50 cards total.
-// Usage (one-time):
-//   1) Place this file at: src/lib/seed.ts
-//   2) In src/main.ts (TEMPORARILY), after importing './app.css', add:
-//        import { seedIfEmpty } from './lib/seed';
-//        seedIfEmpty(); // run once, then remove after seeding
-//      Or call `seedIfEmpty()` from the browser console after the app loads.
-//   3) Once cards appear, remove the import/call to avoid reseeding every refresh.
-
 import { db, uuid } from './db';
-import type { Card, Deck, Settings } from './models';
+import type { Card, Deck } from './models';
 
 export async function seedIfEmpty() {
-  // Create decks if missing
-  let beginner: Deck | undefined = (await db.decks.where('name').equals('Beginner Vocabulary').first()) ?? undefined;
-  let intermediate: Deck | undefined = (await db.decks.where('name').equals('Intermediate Grammar').first()) ?? undefined;
-
   const nowISO = new Date().toISOString();
+
+  // Look up by name without requiring an index
+  let beginner: Deck | undefined =
+    (await db.decks.filter(d => d.name === 'Beginner Vocabulary').first()) ?? undefined;
+
+  let intermediate: Deck | undefined =
+    (await db.decks.filter(d => d.name === 'Intermediate Grammar').first()) ?? undefined;
 
   if (!beginner) {
     beginner = {
@@ -40,7 +34,7 @@ export async function seedIfEmpty() {
     await db.decks.add(intermediate);
   }
 
-  // If any cards already exist, do nothing (avoid duplicates)
+  // Skip if any cards already exist
   const cardCount = await db.cards.count();
   if (cardCount > 0) {
     console.info('[seed] Cards already present, skipping seed.');
@@ -55,7 +49,15 @@ export async function seedIfEmpty() {
     lapses: 0 as number
   });
 
-  const mk = (deckId: string, hangul: string, meaning: string, romanization?: string, exampleKo?: string, exampleEn?: string, tags: string[] = []) : Card => ({
+  const mk = (
+    deckId: string,
+    hangul: string,
+    meaning: string,
+    romanization?: string,
+    exampleKo?: string,
+    exampleEn?: string,
+    tags: string[] = []
+  ): Card => ({
     id: uuid(),
     deckId,
     front: { hangul, romanization },

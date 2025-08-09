@@ -1,21 +1,31 @@
 <script lang="ts">
   import type { Card, Grade } from '../lib/models';
-  import { db } from '../lib/db';
+  import { db, logOneReviewNow } from '../lib/db';
   import { gradeCard } from '../lib/srs';
-  import KeyboardHangul from './KeyboardHangul.svelte';
-  import { incReviews } from '../lib/progress';
   import { showToast } from '../lib/toast';
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy, tick } from 'svelte';
 
   export let cards: Card[] = [];
   export let direction: 'ko2en' | 'en2ko' | 'both' = 'ko2en';
-  export let tolerance: { normalizeHangul: boolean; ignorePunctuation: boolean } = { normalizeHangul: true, ignorePunctuation: true };
+  export let tolerance = { normalizeHangul: true, ignorePunctuation: true };
 
   let idx = 0;
   let input = '';
   let revealed = false;
   let current: Card | null = null;
   $: current = cards[idx] ?? null;
+
+  // IME composition guard (for native keyboards)
+  let composing = false;
+
+  // focus management
+  let inputEl: HTMLInputElement | null = null;
+  async function focusInput() {
+    await tick();
+    inputEl?.focus();
+    inputEl?.select?.();
+  }
+  $: if (current) { input = ''; revealed = false; focusInput(); }
 
   $: activeDir = direction === 'both'
     ? (idx % 2 === 0 ? 'ko2en' : 'en2ko')
@@ -47,76 +57,120 @@
     if (!current) return;
     const updated = gradeCard(current, g, new Date());
     await db.cards.put(updated);
-    incReviews(1);
+    await logOneReviewNow();
 
-    // toast feedback
     if (g === 'again') showToast('Again → review soon', 'warning');
     else if (g === 'hard') showToast('Hard → small step', 'info');
-    else if (g === 'good') showToast('Good! next due in ' + updated.srs.interval + 'd', 'success');
-    else if (g === 'easy') showToast('Easy! boosted to ' + updated.srs.interval + 'd', 'success');
+    else if (g === 'good') showToast('Good!', 'success');
+    else if (g === 'easy') showToast('Easy!', 'success');
 
-    input = ''; revealed = false; idx += 1;
+    idx += 1; // reactive block resets input & focuses next
   }
 
-  function onIMECommit(e: CustomEvent<string>) {
-    const v = e.detail;
-    if (v === '__BACKSPACE__') { input = input.slice(0,-1); return; }
-    input += v;
-  }
-
-  // Hotkeys: Enter/Space to reveal, 1-4 to grade when revealed
+  // keyboard: only grading shortcuts after reveal; Enter-to-reveal handled on inputs
   function keyHandler(e: KeyboardEvent) {
-    if (!current) return;
+    const target = e.target as HTMLElement | null;
+    const isTyping = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+    if (isTyping) return;
+
+    if (!current || !revealed) return;
+
     const k = e.key.toLowerCase();
-    if (!revealed && (k === 'enter' || k === ' ')) { e.preventDefault(); revealed = true; return; }
-    if (revealed) {
-      if (k === '1') { e.preventDefault(); grade('again'); }
-      if (k === '2') { e.preventDefault(); grade('hard'); }
-      if (k === '3') { e.preventDefault(); grade('good'); }
-      if (k === '4') { e.preventDefault(); grade('easy'); }
-      // letter aliases
-      if (k === 'a') { e.preventDefault(); grade('again'); }
-      if (k === 'h') { e.preventDefault(); grade('hard'); }
-      if (k === 'g') { e.preventDefault(); grade('good'); }
-      if (k === 'e') { e.preventDefault(); grade('easy'); }
-    }
+    if (k === '1' || k === 'a') { e.preventDefault(); grade('again'); }
+    if (k === '2' || k === 'h') { e.preventDefault(); grade('hard'); }
+    if (k === '3' || k === 'g') { e.preventDefault(); grade('good'); }
+    if (k === '4' || k === 'e') { e.preventDefault(); grade('easy'); }
   }
 
   onMount(() => window.addEventListener('keydown', keyHandler));
   onDestroy(() => window.removeEventListener('keydown', keyHandler));
+
+  function toggleReveal() { revealed = !revealed; }
 </script>
 
 {#if !current}
   <div class="subtle">No more cards due. 🎉</div>
 {:else}
-  <div class="space-y-4">
-    <div class="text-xs text-slate-400">Card {idx+1} / {cards.length} · Mode: {activeDir === 'ko2en' ? 'KO → EN' : 'EN → KO'}</div>
+  <div class="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-6 shadow-[0_10px_30px_-12px_rgba(0,0,0,0.4)] backdrop-blur-md space-y-5">
+
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="text-xs text-slate-400">Card {idx + 1} / {cards.length}</div>
+    </div>
 
     {#if activeDir === 'ko2en'}
-      <div class="text-3xl">{current.front.hangul}</div>
-      {#if current.front.romanization}
-        <div class="text-xs text-slate-400 mt-1">{current.front.romanization}</div>
-      {/if}
-      <div class="mt-4">
-        <input class="w-full px-3 py-3 rounded-xl bg-ink-2 border border-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-               placeholder="Type the English meaning…" bind:value={input}
-               on:keydown={(e)=>{ if((e as KeyboardEvent).key==='Enter') revealed=true; }} />
+      <div class="space-y-1">
+        <div class="text-3xl font-semibold tracking-tight">{current.front.hangul}</div>
+        {#if current.front.romanization}
+          <div class="text-xs text-slate-400">{current.front.romanization}</div>
+        {/if}
+      </div>
+      <div class="mt-3">
+        <input
+          bind:this={inputEl}
+          class="w-full px-3 py-3 rounded-xl border border-slate-800 bg-slate-950/60 focus:outline-none focus:border-slate-700"
+          placeholder="Type the English meaning…"
+          bind:value={input}
+          autocapitalize="off"
+          autocomplete="off"
+          autocorrect="off"
+          spellcheck="false"
+          inputmode="text"
+          on:keydown={(e) => {
+            // don't reveal mid-composition; reveal on Enter otherwise
+            if ((e as KeyboardEvent).key === 'Enter' && !composing) {
+              e.preventDefault(); revealed = true;
+            }
+          }}
+          on:compositionstart={() => composing = true}
+          on:compositionend={() => composing = false}
+        />
       </div>
     {:else}
-      <div class="subtle text-sm mb-1">Type this in Korean:</div>
-      <div class="text-3xl">{current.back.meaning}</div>
+      <div class="space-y-1">
+        <div class="subtle text-sm">Type this in Korean:</div>
+        <div class="text-3xl font-semibold tracking-tight">{current.back.meaning}</div>
+      </div>
       <div class="mt-3">
-        <input class="w-full px-3 py-3 rounded-xl bg-ink-2 border border-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-               placeholder="Hangul here…" bind:value={input}
-               on:keydown={(e)=>{ if((e as KeyboardEvent).key==='Enter') revealed=true; }} />
-        <div class="mt-2">
-          <KeyboardHangul on:commit={onIMECommit} />
+        <input
+          bind:this={inputEl}
+          class="w-full px-3 py-3 rounded-xl border border-slate-800 bg-slate-950/60 focus:outline-none focus:border-slate-700"
+          placeholder="여기에 입력…"
+          bind:value={input}
+          lang="ko"               
+          autocapitalize="off"
+          autocomplete="off"
+          autocorrect="off"
+          spellcheck="false"
+          inputmode="text"
+          on:keydown={(e) => {
+            if ((e as KeyboardEvent).key === 'Enter' && !composing) {
+              e.preventDefault(); revealed = true;
+            }
+          }}
+          on:compositionstart={() => composing = true}
+          on:compositionend={() => composing = false}
+        />
+        <div class="mt-2 text-xs text-slate-500">
+          Tip: enable the Korean keyboard on your device (e.g., iOS/Android/macOS/Windows) and switch with your OS shortcut.
         </div>
       </div>
     {/if}
 
+    <div class="mt-2 flex items-center gap-3">
+      <button
+        class="rounded-xl bg-slate-800/60 px-4 py-2 border border-slate-700 hover:bg-slate-700"
+        on:click={toggleReveal}
+      >
+        {revealed ? 'Hide Answer' : 'Show Answer'}
+      </button>
+
+      {#if !revealed}
+        <span class="text-xs text-slate-400">Tip: grade with 1–4 / A H G E after revealing</span>
+      {/if}
+    </div>
+
     {#if revealed}
-      <div class="mt-3 p-4 rounded-xl bg-slate-900/80 border border-white/10">
+      <div class="mt-3 rounded-xl border border-slate-800 bg-slate-950/60 p-4">
         {#if activeDir === 'ko2en'}
           <div class="text-slate-200">
             Correct (EN): <b class="text-white">{current.back.meaning}</b>
@@ -130,26 +184,26 @@
             <div class="text-xs text-slate-400">({current.front.romanization})</div>
           {/if}
         {/if}
+
         {#if current.back.exampleKo}
-          <div class="mt-2 text-slate-100">{current.back.exampleKo}</div>
+          <div class="mt-3 text-slate-100">{current.back.exampleKo}</div>
           <div class="text-sm text-slate-400">{current.back.exampleEn}</div>
         {/if}
-        <div class="mt-2">
-          {#if isCorrect()}<span class="text-green-400">Your answer is correct.</span>
-          {:else}<span class="text-rose-300">Not quite—grade it honestly below.</span>{/if}
+
+        <div class="mt-3">
+          {#if isCorrect()}
+            <span class="text-emerald-400">Your answer is correct.</span>
+          {:else}
+            <span class="text-rose-300">Not quite—grade it honestly below.</span>
+          {/if}
         </div>
       </div>
 
-      <div class="mt-3 flex flex-wrap gap-2">
-        <button class="btn bg-rose-700 hover:bg-rose-600" on:click={() => grade('again')}>Again (1/A)</button>
-        <button class="btn bg-amber-700 hover:bg-amber-600" on:click={() => grade('hard')}>Hard (2/H)</button>
-        <button class="btn bg-emerald-700 hover:bg-emerald-600" on:click={() => grade('good')}>Good (3/G)</button>
-        <button class="btn btn-primary" on:click={() => grade('easy')}>Easy (4/E)</button>
-      </div>
-    {:else}
-      <div class="mt-3 flex items-center gap-3">
-        <button class="btn btn-muted" on:click={() => revealed=true}>Show Answer</button>
-        <span class="text-xs text-slate-400">Tip: press Enter/Space to reveal</span>
+      <div class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <button class="rounded-xl px-3 py-2 bg-rose-700 hover:bg-rose-600"  on:click={() => grade('again')}>Again (1/A)</button>
+        <button class="rounded-xl px-3 py-2 bg-amber-700 hover:bg-amber-600" on:click={() => grade('hard')}>Hard (2/H)</button>
+        <button class="rounded-xl px-3 py-2 bg-emerald-700 hover:bg-emerald-600" on:click={() => grade('good')}>Good (3/G)</button>
+        <button class="rounded-xl px-3 py-2 bg-sky-600 hover:bg-sky-500"    on:click={() => grade('easy')}>Easy (4/E)</button>
       </div>
     {/if}
   </div>

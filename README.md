@@ -1,7 +1,7 @@
 # 🇰🇷 Korean Recall
 
 A **local-first flashcard trainer for Korean** — powered by a Spaced Repetition System (SRS) to help you retain vocabulary, grammar, and sentences longer.  
-Practice daily with smart scheduling, fun visuals, and an in-app Hangul keyboard. Your data stays entirely on your device.
+Practice daily with smart scheduling and fun visuals. Your data stays entirely on your device.
 
 ---
 
@@ -12,7 +12,6 @@ Practice daily with smart scheduling, fun visuals, and an in-app Hangul keyboard
 - ⏳ Review with **SM-2 spaced repetition**
 - 📅 Track **daily review goals**
 - 🐥 Fun mascot to motivate progress
-- 🔄 In-app Hangul keyboard (no OS toggle needed)
 - 📶 Works completely offline
 - 📱 Responsive design for desktop & mobile
 
@@ -46,7 +45,6 @@ Practice daily with smart scheduling, fun visuals, and an in-app Hangul keyboard
 src/
  ├── components/           # Reusable UI components
  │    ├── MascotProgress.svelte
- │    ├── HangulKeyboard.svelte
  │    ├── CardForm.svelte
  │    ├── ReviewPanel.svelte
  │    └── ...

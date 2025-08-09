@@ -1,6 +1,5 @@
 <script lang="ts">
   import type { Deck } from '../lib/models';
-  import KeyboardHangul from './KeyboardHangul.svelte';
   import { db, uuid } from '../lib/db';
 
   export let deck: Deck;
@@ -12,15 +11,6 @@
   let exampleEn = '';
   let tags = '';
 
-  let previewCompose = '';
-
-  function onIMEInput(e: CustomEvent<string>) { previewCompose = e.detail; }
-  function onIMECommit(e: CustomEvent<string>) {
-    const v = e.detail;
-    if (v === '__BACKSPACE__') { hangul = hangul.slice(0,-1); return; }
-    hangul += v;
-  }
-
   async function save() {
     const now = new Date().toISOString();
     await db.cards.add({
@@ -29,7 +19,7 @@
       front: { hangul, romanization: romanization || undefined },
       back:  { meaning, exampleKo: exampleKo || undefined, exampleEn: exampleEn || undefined },
       tags: tags ? tags.split(',').map(s => s.trim()).filter(Boolean) : [],
-      srs: { ease: 2.5, interval: 0, dueAt: new Date().toISOString(), reps: 0, lapses: 0 },
+      srs: { ease: 2.5, interval: 0, dueAt: now, reps: 0, lapses: 0 },
       createdAt: now, updatedAt: now
     });
     hangul = meaning = romanization = exampleKo = exampleEn = tags = '';
@@ -40,14 +30,12 @@
 <div class="grid gap-4">
   <div>
     <label for="hangul" class="text-sm text-slate-300">Hangul</label>
-    <input id="hangul" class="w-full px-3 py-2 rounded-xl bg-ink-2 border border-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-           bind:value={hangul} placeholder="e.g., 안녕하세요" />
-    <div class="mt-2">
-      <KeyboardHangul on:input={onIMEInput} on:commit={onIMECommit} />
-      {#if previewCompose}
-        <div class="text-xs text-slate-400 mt-1">Composing: {previewCompose}</div>
-      {/if}
-    </div>
+    <input
+      id="hangul"
+      class="w-full px-3 py-2 rounded-xl bg-ink-2 border border-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+      bind:value={hangul}
+      placeholder="e.g., 안녕하세요"
+    />
   </div>
 
   <div class="grid md:grid-cols-2 gap-4">
@@ -83,7 +71,7 @@
   </div>
 
   <div class="flex gap-3">
-    <button class="btn btn-primary" on:click={save}>Save Card</button>
+    <button class="btn btn-primary" on:click={save} type="button">Save Card</button>
     <button class="btn btn-muted" type="button" on:click={() => { hangul=meaning=romanization=exampleKo=exampleEn=tags=''; }}>Clear</button>
   </div>
 </div>

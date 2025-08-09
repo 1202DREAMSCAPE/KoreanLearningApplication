@@ -26,18 +26,19 @@ export interface Card {
   altAnswers?: string[];
   tags: string[];
   notes?: string;
+  due?: string;  
   srs: SRS;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface Settings {
-  id: 'singleton';
-  dailyGoal: number;
-  theme: 'dark' | 'light';
+  id: string;
+  theme: 'dark' | 'light' | 'system';
   font: string;
   language: 'en';
   typingTolerance: { normalizeHangul: boolean; ignorePunctuation: boolean };
   reviewDirection: 'ko2en' | 'en2ko' | 'both'; // NEW
+  dailyGoal?: number;
 }
 
