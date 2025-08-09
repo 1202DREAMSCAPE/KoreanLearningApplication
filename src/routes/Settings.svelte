@@ -154,20 +154,19 @@
               min="1"
               bind:value={settings.dailyGoal}
               class="w-28 rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-right outline-none ring-0 focus:border-slate-700"
-            />
-            <button
-              on:click={save}
-              disabled={saving}
-              class="rounded-xl bg-sky-600 px-4 py-2 font-medium text-white shadow hover:bg-sky-500 disabled:opacity-60"
-            >
-              {saving ? 'Saving…' : 'Save'}
-            </button>
-            {#if savedAt}
-              <span class="text-xs text-slate-500">Saved {savedAt}</span>
-            {/if}
-          </div>
-          <p class="mt-2 text-xs text-slate-500">This drives the progress bar on Home.</p>
+            /> 
         </div>
+        <button
+          on:click={save}
+          disabled={saving}
+          class="rounded-xl bg-sky-600 px-4 py-2 mt-2 font-medium text-white shadow hover:bg-sky-500 disabled:opacity-60"
+        >
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+        {#if savedAt}
+          <span class="text-xs text-slate-500">Saved {savedAt}</span>
+        {/if}
+      </div>
       </div>
     </div>
 
