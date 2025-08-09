@@ -20,8 +20,8 @@ Practice daily with smart scheduling, fun visuals, and an in-app Hangul keyboard
 
 ## 🖼 Screenshots
 
-| Home Page | Review Mode | Add Card |
-|-----------|-------------|----------|
+| Home Page | Add Card |
+|-----------|----------|
 | ![Home](public/home.png) | ![Add](public/add.png) |
 
 ---
