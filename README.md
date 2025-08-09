@@ -1,47 +1,140 @@
-# Svelte + TS + Vite
+# 🇰🇷 Korean Recall
 
-This template should help get you started developing with Svelte and TypeScript in Vite.
+A **local-first flashcard trainer for Korean** — powered by a Spaced Repetition System (SRS) to help you retain vocabulary, grammar, and sentences longer.  
+Practice daily with smart scheduling, fun visuals, and an in-app Hangul keyboard. Your data stays entirely on your device.
 
-## Recommended IDE Setup
+---
 
-[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
+## ✨ Features
 
-## Need an official Svelte framework?
+- 📝 Add, edit, and delete **flashcards**
+- 📚 Organize cards into **Decks**
+- ⏳ Review with **SM-2 spaced repetition**
+- 📅 Track **daily review goals**
+- 🐥 Fun mascot to motivate progress
+- 🔄 In-app Hangul keyboard (no OS toggle needed)
+- 📶 Works completely offline
+- 📱 Responsive design for desktop & mobile
 
-Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also powered by Vite. Deploy anywhere with its serverless-first approach and adapt to various platforms, with out of the box support for TypeScript, SCSS, and Less, and easily-added support for mdsvex, GraphQL, PostCSS, Tailwind CSS, and more.
+---
 
-## Technical considerations
+## 🖼 Screenshots
 
-**Why use this over SvelteKit?**
+| Home Page | Review Mode | Add Card |
+|-----------|-------------|----------|
+| ![Home](public/home.png) | ![Add](public/add.png) |
 
-- It brings its own routing solution which might not be preferable for some users.
-- It is first and foremost a framework that just happens to use Vite under the hood, not a Vite app.
+---
 
-This template contains as little as possible to get started with Vite + TypeScript + Svelte, while taking into account the developer experience with regards to HMR and intellisense. It demonstrates capabilities on par with the other `create-vite` templates and is a good starting point for beginners dipping their toes into a Vite + Svelte project.
+## 🛠 Tech Stack
 
-Should you later need the extended capabilities and extensibility provided by SvelteKit, the template has been structured similarly to SvelteKit so that it is easy to migrate.
+| Category              | Technology                  |
+|-----------------------|-----------------------------|
+| Framework             | [Svelte](https://svelte.dev/) |
+| Dev Server/Bundler    | [Vite](https://vitejs.dev/) |
+| Styling               | [TailwindCSS](https://tailwindcss.com/) |
+| Storage               | [Dexie.js](https://dexie.org/) (IndexedDB) |
+| Validation            | [Zod](https://zod.dev/) |
+| Date handling         | [Day.js](https://day.js.org/) |
+| Routing               | [svelte-spa-router](https://github.com/ItalyPaleAle/svelte-spa-router) |
 
-**Why `global.d.ts` instead of `compilerOptions.types` inside `jsconfig.json` or `tsconfig.json`?**
+---
 
-Setting `compilerOptions.types` shuts out all other types not explicitly listed in the configuration. Using triple-slash references keeps the default TypeScript setting of accepting type information from the entire workspace, while also adding `svelte` and `vite/client` type information.
+## 📂 Project Structure
 
-**Why include `.vscode/extensions.json`?**
-
-Other templates indirectly recommend extensions via the README, but this file allows VS Code to prompt the user to install the recommended extension upon opening the project.
-
-**Why enable `allowJs` in the TS template?**
-
-While `allowJs: false` would indeed prevent the use of `.js` files in the project, it does not prevent the use of JavaScript syntax in `.svelte` files. In addition, it would force `checkJs: false`, bringing the worst of both worlds: not being able to guarantee the entire codebase is TypeScript, and also having worse typechecking for the existing JavaScript. In addition, there are valid use cases in which a mixed codebase may be relevant.
-
-**Why is HMR not preserving my local component state?**
-
-HMR state preservation comes with a number of gotchas! It has been disabled by default in both `svelte-hmr` and `@sveltejs/vite-plugin-svelte` due to its often surprising behavior. You can read the details [here](https://github.com/rixo/svelte-hmr#svelte-hmr).
-
-If you have state that's important to retain within a component, consider creating an external store which would not be replaced by HMR.
-
-```ts
-// store.ts
-// An extremely simple external store
-import { writable } from 'svelte/store'
-export default writable(0)
 ```
+src/
+ ├── components/           # Reusable UI components
+ │    ├── MascotProgress.svelte
+ │    ├── HangulKeyboard.svelte
+ │    ├── CardForm.svelte
+ │    ├── ReviewPanel.svelte
+ │    └── ...
+ │
+ ├── lib/                  # Logic, models, utilities
+ │    ├── db.ts            # Dexie.js IndexedDB setup
+ │    ├── models.ts        # TypeScript types
+ │    ├── srs.ts           # SM-2 scheduling logic
+ │    ├── progress.ts      # Daily review tracker
+ │
+ ├── routes/               # Page-level views
+ │    ├── Home.svelte
+ │    ├── Add.svelte
+ │    ├── Review.svelte
+ │    ├── Settings.svelte
+ │    └── Library.svelte
+ │
+ ├── app.css               # Tailwind entry point
+ └── main.ts               # App entry + router
+```
+
+---
+
+## 📊 Data Models
+
+**Deck**
+```ts
+export interface Deck {
+  id: string;
+  name: string;
+  newPerDay: number;
+  reviewLimit: number;
+  createdAt: string;
+}
+```
+
+**Card**
+```ts
+export interface Card {
+  id: string;
+  deckId: string;
+  front: string;
+  back: string;
+  interval: number;
+  ease: number;
+  due: string;
+  createdAt: string;
+}
+```
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- **Node.js v20+** (required for Vite & Tailwind)
+- npm or yarn
+
+### Installation
+```bash
+# Clone repo
+git clone https://github.com/1202DREAMSCAPE/KoreanLearningApplication
+cd korean-srs
+
+# Install dependencies
+npm install
+
+# Start dev server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+---
+
+## 🔮 Roadmap
+
+- [ ] Dark mode toggle  
+- [ ] Import/export decks as JSON  
+- [ ] Built-in starter decks (Korean 101)  
+- [ ] Animated review feedback  
+- [ ] Customizable mascot & daily goals  
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+---
