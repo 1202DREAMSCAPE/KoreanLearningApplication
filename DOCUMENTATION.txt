@@ -1,0 +1,77 @@
+KOREAN RECALL - DEVELOPER DOCUMENTATION
+---------------------------------------
+
+1. OVERVIEW
+-----------
+Korean Recall is a local-first spaced repetition flashcard app designed to help users learn Korean efficiently. 
+It uses the SM-2 algorithm to optimize review timing based on user performance.
+
+No backend is required — all data is stored in the browser using IndexedDB via Dexie.js.
+
+2. MAIN FEATURES
+----------------
+- Add/Edit/Delete cards
+- Deck-based organization
+- SM-2 spaced repetition scheduling
+- Built-in Hangul keyboard
+- Daily review progress tracker with mascot display
+- Works entirely offline
+- Responsive UI using TailwindCSS
+
+3. ARCHITECTURE
+---------------
+Frontend Framework: Svelte
+Bundler: Vite
+Storage: IndexedDB (Dexie.js wrapper)
+Routing: svelte-spa-router
+Styling: TailwindCSS
+Validation: Zod
+Date/Time: Day.js
+
+4. FILE STRUCTURE
+-----------------
+src/
+ ├── components/      → Reusable UI elements (CardForm, ReviewPanel, MascotProgress)
+ ├── lib/             → Core logic (db.ts, srs.ts, models.ts)
+ ├── routes/          → Page-level Svelte files (Home.svelte, Review.svelte, etc.)
+ ├── app.css          → TailwindCSS entry file
+ └── main.ts          → App initialization and routing setup
+
+5. DATA MODELS
+--------------
+Deck:
+- id (string, UUID)
+- name (string)
+- newPerDay (number)
+- reviewLimit (number)
+- createdAt (ISO date string)
+
+Card:
+- id (string, UUID)
+- deckId (string, foreign key)
+- front (string, question or term)
+- back (string, answer or translation)
+- interval (number, days until next review)
+- ease (number, ease factor for SM-2)
+- due (string, ISO date when card is due)
+- createdAt (ISO date string)
+
+6. CORE LOGIC
+-------------
+- buildDueQueue(): Determines which cards are due for review today.
+- SM-2 algorithm in srs.ts schedules the next due date based on performance ratings (again, hard, easy).
+
+7. DEVELOPMENT NOTES
+--------------------
+- Requires Node.js 20+ for compatibility with Vite & Tailwind.
+- TailwindCSS config is stored in tailwind.config.js and postcss.config.js.
+- For UI consistency, use Tailwind utility classes in all components.
+- Accessibility: Ensure each form label is associated with its input.
+
+8. ROADMAP
+----------
+- Dark mode
+- Export/Import deck JSON
+- Starter Korean deck included by default
+- Enhanced review animations
+- More mascot styles

@@ -11,9 +11,9 @@
   window.addEventListener('hashchange', onHash);
 </script>
 
-<!-- Top nav -->
-<header class="sticky top-0 z-30 backdrop-blur border-b border-white/10 bg-slate-950/50">
-  <div class="mx-auto max-w-5xl px-4 py-3 flex items-center justify-between">
+<!-- Header -->
+<header class="sticky top-0 z-30 border-b border-white/10 bg-slate-950/70 supports-[backdrop-filter]:bg-slate-950/50 backdrop-blur">
+  <div class="shell py-3 flex items-center justify-between">
     <a href="#/" class="flex items-center gap-2">
       <span class="text-lg font-semibold">🇰🇷 Korean SRS</span>
     </a>
@@ -27,7 +27,8 @@
   </div>
 </header>
 
-<main class="mx-auto max-w-5xl px-4 py-8 md:py-12 space-y-8">
+
+<main class="shell page space-y-8">
   {#if route === '#/'}
     <Home />
   {:else if route.startsWith('#/review')}
@@ -43,7 +44,7 @@
   {/if}
 </main>
 
-<footer class="mx-auto max-w-5xl px-4 pb-10 text-center">
+<footer class="shell mx-auto max-w-5xl px-4 pb-10 text-center">
   <div class="text-xs text-slate-500">Built locally · Your data stays on your device</div>
 </footer>
 
