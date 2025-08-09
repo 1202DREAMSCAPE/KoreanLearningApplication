@@ -277,7 +277,7 @@
     </div>
   </div>
 
-  <!-- Bulk actions
+  <!-- Bulk actions 
   <div class="mt-4 flex items-center gap-2 flex-wrap">
     <button class="rounded-xl border border-slate-800 bg-slate-900/50 px-3 py-2 text-sm hover:bg-slate-800/60 disabled:opacity-50"
             on:click={bulkDelete}
@@ -404,7 +404,7 @@
   {#if showEdit && editCard}
     <div class="fixed inset-0 z-[999]">
       <!-- overlay -->
-      <div class="absolute inset-0 bg-black/50" on:click={closeEdit}></div>
+      <button type="button" class="absolute inset-0 bg-black/50" on:click={closeEdit} aria-label="Close edit overlay"></button>
 
       <!-- drawer -->
       <div class="absolute right-0 top-0 h-full w-full max-w-md p-4">
@@ -416,39 +416,39 @@
 
           <div class="space-y-3 overflow-auto pr-1">
             <div>
-              <label class="block text-xs text-slate-400">Hangul</label>
-              <input class="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 outline-none focus:border-slate-700"
+              <label for="hangul-input" class="block text-xs text-slate-400">Hangul</label>
+              <input id="hangul-input" class="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 outline-none focus:border-slate-700"
                      bind:value={editCard.front.hangul} />
             </div>
 
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-xs text-slate-400">Meaning (EN)</label>
-                <input class="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 outline-none focus:border-slate-700"
+                <label for="meaning-input" class="block text-xs text-slate-400">Meaning (EN)</label>
+                <input id="meaning-input" class="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 outline-none focus:border-slate-700"
                        bind:value={editCard.back.meaning} />
               </div>
               <div>
-                <label class="block text-xs text-slate-400">Romanization</label>
-                <input class="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 outline-none focus:border-slate-700"
+                <label for="romanization" class="block text-xs text-slate-400">Romanization</label>
+                <input id="romanization" class="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 outline-none focus:border-slate-700"
                        bind:value={editCard.front.romanization} />
               </div>
             </div>
 
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-xs text-slate-400">Example (KO)</label>
-                <input class="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 outline-none focus:border-slate-700"
+                <label for="example-ko" class="block text-xs text-slate-400">Example (KO)</label>
+                <input id="example-ko" class="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 outline-none focus:border-slate-700"
                        bind:value={editCard.back.exampleKo} />
               </div>
               <div>
-                <label class="block text-xs text-slate-400">Example (EN)</label>
-                <input class="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 outline-none focus:border-slate-700"
+                <label for="example-en" class="block text-xs text-slate-400">Example (EN)</label>
+                <input id="example-en" class="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 outline-none focus:border-slate-700"
                        bind:value={editCard.back.exampleEn} />
               </div>
             </div>
 
             <div>
-              <label class="block text-xs text-slate-400 mb-1">Tags</label>
+              <label for="tags-input" class="block text-xs text-slate-400 mb-1">Tags</label>
               <div class="flex flex-wrap gap-2">
                 {#each (editCard.tags || []) as t, i}
                   <span class="inline-flex items-center gap-1 rounded-full border border-slate-800 bg-slate-950/60 px-2 py-[2px] text-[11px]">
@@ -458,7 +458,7 @@
                 {/each}
               </div>
               <div class="mt-2 flex gap-2">
-                <input class="flex-1 rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-sm outline-none focus:border-slate-700"
+                <input id="tags-input" class="flex-1 rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-sm outline-none focus:border-slate-700"
                        placeholder="Add a tag…" bind:value={tagNew}
                        on:keydown={(e)=>{ if ((e as KeyboardEvent).key === 'Enter') addTagToEdit(); }} />
                 <button class="rounded-xl border border-slate-800 bg-slate-900/50 px-3 py-2 text-sm hover:bg-slate-800/60"
@@ -466,9 +466,17 @@
               </div>
             </div>
 
-            <div class="text-xs text-slate-500 grid grid-cols-2 gap-3">
-              <div>Due: {editCard.srs?.dueAt ? dayjs(editCard.srs.dueAt).format('YYYY-MM-DD') : '—'}</div>
-              <div>Interval: {editCard.srs?.interval ?? 0}d · Ease: {editCard.srs?.ease ?? '—'} · Reps: {editCard.srs?.reps ?? 0}</div>
+            <div class="text-xs grid grid-cols-2 gap-3">
+              <div>
+                <label for="due-date" class="block text-xs text-slate-400">Due</label>
+                <input
+                  id="due-date"
+                  type="date"
+                  class="mt-1 text-slate-50 w-full rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 outline-none focus:border-slate-700 text-sm"
+                  bind:value={editCard.srs.dueAt}
+                />
+              </div>
+              <!-- <div>Interval: {editCard.srs?.interval ?? 0}d · Ease: {editCard.srs?.ease ?? '—'} · Reps: {editCard.srs?.reps ?? 0}</div> -->
             </div>
           </div>
 

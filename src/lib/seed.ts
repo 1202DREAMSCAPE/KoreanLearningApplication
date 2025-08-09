@@ -5,7 +5,13 @@ import type { Card, Deck } from './models';
 export async function seedIfEmpty() {
   const nowISO = new Date().toISOString();
 
-  // Look up by name without requiring an index
+  const addDays = (d: Date, n: number) => {
+    const x = new Date(d);
+    x.setDate(x.getDate() + n);
+    return x;
+  };
+
+  // Find or create decks
   let beginner: Deck | undefined =
     (await db.decks.filter(d => d.name === 'Beginner Vocabulary').first()) ?? undefined;
 
@@ -41,6 +47,7 @@ export async function seedIfEmpty() {
     return;
   }
 
+  // --- SRS defaults (tomorrow). To make them due now, change to `new Date().toISOString()`.
   const baseSrs = () => ({
     ease: 2.5,
     interval: 0,
@@ -49,6 +56,7 @@ export async function seedIfEmpty() {
     lapses: 0 as number
   });
 
+  // Must follow your signature exactly: romanization? → exampleKo? → exampleEn? → tags[]
   const mk = (
     deckId: string,
     hangul: string,
@@ -60,7 +68,7 @@ export async function seedIfEmpty() {
   ): Card => ({
     id: uuid(),
     deckId,
-    front: { hangul, romanization },
+    front: { hangul, romanization: romanization || undefined },
     back: { meaning, exampleKo, exampleEn },
     tags,
     altAnswers: [],
@@ -70,63 +78,197 @@ export async function seedIfEmpty() {
     updatedAt: nowISO
   });
 
-  // 30 Beginner vocab cards
-  const beginnerCards: Card[] = [
-    mk(beginner.id, '안녕하세요', 'Hello (formal)', 'annyeonghaseyo', '안녕하세요! 반갑습니다.', 'Hello! Nice to meet you.', ['greetings']),
-    mk(beginner.id, '감사합니다', 'Thank you (formal)', 'gamsahamnida', '도와주셔서 감사합니다.', 'Thank you for your help.', ['greetings']),
-    mk(beginner.id, '네', 'Yes', 'ne', '', '', ['basics']),
-    mk(beginner.id, '아니요', 'No', 'aniyo', '', '', ['basics']),
-    mk(beginner.id, '물', 'Water', 'mul', '물 좀 주세요.', 'Please give me some water.', ['food']),
-    mk(beginner.id, '밥', 'Cooked rice / meal', 'bap', '밥 먹었어요?', 'Did you eat?', ['food']),
-    mk(beginner.id, '사랑', 'Love', 'sarang', '', '', ['feelings']),
-    mk(beginner.id, '학교', 'School', 'hakgyo', '학교에 가요.', 'I go to school.', ['places']),
-    mk(beginner.id, '친구', 'Friend', 'chingu', '친구를 만나요.', 'I meet a friend.', ['people']),
-    mk(beginner.id, '가족', 'Family', 'gajok', '', '', ['people']),
-    mk(beginner.id, '저는 학생이에요', 'I am a student', 'jeoneun haksaeng-ieyo', '저는 학생이에요.', 'I am a student.', ['intro']),
-    mk(beginner.id, '어디에요?', 'Where is it?', 'eodieyo?', '', '', ['travel']),
-    mk(beginner.id, '얼마에요?', 'How much is it?', 'eolmaeyo?', '', '', ['shopping']),
-    mk(beginner.id, '오늘', 'Today', 'oneul', '', '', ['time']),
-    mk(beginner.id, '내일', 'Tomorrow', 'naeil', '', '', ['time']),
-    mk(beginner.id, '어제', 'Yesterday', 'eoje', '', '', ['time']),
-    mk(beginner.id, '좋아요', 'It’s good / I like it', 'joayo', '정말 좋아요!', 'I really like it!', ['feelings']),
-    mk(beginner.id, '싫어요', 'I don’t like it', 'silheoyo', '', '', ['feelings']),
-    mk(beginner.id, '알겠습니다', 'Understood / Got it', 'algesseumnida', '', '', ['polite']),
-    mk(beginner.id, '잠시만요', 'Just a moment', 'jamsimanyo', '', '', ['polite']),
-    mk(beginner.id, '죄송합니다', 'Sorry (formal)', 'joesonghamnida', '정말 죄송합니다.', 'I am truly sorry.', ['polite']),
-    mk(beginner.id, '맛있어요', 'It’s delicious', 'masisseoyo', '이 음식 맛있어요.', 'This food is delicious.', ['food']),
-    mk(beginner.id, '괜찮아요', 'It’s okay / No problem', 'gwaenchanayo', '', '', ['polite']),
-    mk(beginner.id, '병원', 'Hospital', 'byeongwon', '', '', ['places']),
-    mk(beginner.id, '약국', 'Pharmacy', 'yakguk', '', '', ['places']),
-    mk(beginner.id, '지하철', 'Subway', 'jihacheol', '지하철을 타요.', 'I take the subway.', ['transport']),
-    mk(beginner.id, '버스', 'Bus', 'beoseu', '', '', ['transport']),
-    mk(beginner.id, '택시', 'Taxi', 'taegsi', '', '', ['transport']),
-    mk(beginner.id, '시장', 'Market', 'sijang', '', '', ['places']),
-    mk(beginner.id, '은행', 'Bank', 'eunhaeng', '', '', ['places'])
+  // Helper types/lists
+  type Entry = {
+    h: string; // hangul
+    m: string; // meaning
+    r?: string; // romanization
+    ek?: string; // exampleKo
+    ee?: string; // exampleEn
+    t?: string[]; // tags
+  };
+
+  const toCards = (deckId: string, list: Entry[], defaultTags: string[] = []) =>
+    list.map(e =>
+      mk(deckId, e.h, e.m, e.r, e.ek, e.ee, e.t ?? defaultTags)
+    );
+
+  // -------------------------
+  // BEGINNER: nouns/phrases
+  // -------------------------
+  const people: Entry[] = [
+    { h: '사람', m: 'person', r: 'saram' },
+    { h: '남자', m: 'man', r: 'namja' },
+    { h: '여자', m: 'woman', r: 'yeoja' },
+    { h: '아이', m: 'child', r: 'ai' },
+    { h: '학생', m: 'student', r: 'haksaeng' },
+    { h: '선생님', m: 'teacher', r: 'seonsaengnim' },
+    { h: '친구', m: 'friend', r: 'chingu' }
   ];
 
-  // 20 Intermediate grammar/sentences
-  const inter = intermediate!;
+  const family: Entry[] = [
+    { h: '부모님', m: 'parents', r: 'bumonim' },
+    { h: '어머니', m: 'mother', r: 'eomeoni' },
+    { h: '아버지', m: 'father', r: 'abeoji' },
+    { h: '엄마', m: 'mom', r: 'eomma' },
+    { h: '아빠', m: 'dad', r: 'appa' },
+    { h: '아들', m: 'son', r: 'adeul' },
+    { h: '딸', m: 'daughter', r: 'ttal' }
+  ];
+
+  const objects: Entry[] = [
+    { h: '가방', m: 'bag', r: 'gabang' },
+    { h: '핸드폰', m: 'cell phone', r: 'haendeupon' },
+    { h: '지갑', m: 'wallet', r: 'jigap' },
+    { h: '열쇠', m: 'key', r: 'yeolsoe' },
+    { h: '책', m: 'book', r: 'chaek' },
+    { h: '펜', m: 'pen', r: 'pen' },
+    { h: '종이', m: 'paper', r: 'jongi' },
+    { h: '컴퓨터', m: 'computer', r: 'keompyuteo' },
+    { h: '노트북', m: 'laptop', r: 'noteubuk' },
+    { h: '티비', m: 'TV', r: 'tibi' }
+  ];
+
+  const transport: Entry[] = [
+    { h: '자동차', m: 'car', r: 'jadongcha' },
+    { h: '지하철', m: 'subway/metro', r: 'jihacheol' },
+    { h: '기차', m: 'train', r: 'gicha' },
+    { h: '버스', m: 'bus', r: 'beoseu' },
+    { h: '택시', m: 'taxi', r: 'taegsi' },
+    { h: '비행기', m: 'airplane', r: 'bihaenggi' },
+    { h: '자전거', m: 'bicycle', r: 'jajeongeo' },
+    { h: '역', m: 'station', r: 'yeok' },
+    { h: '공항', m: 'airport', r: 'gonghang' }
+  ];
+
+  const places: Entry[] = [
+    { h: '집', m: 'home/house', r: 'jip' },
+    { h: '학교', m: 'school', r: 'hakgyo' },
+    { h: '회사', m: 'company/workplace', r: 'hoesa' },
+    { h: '공원', m: 'park', r: 'gongwon' },
+    { h: '식당', m: 'restaurant', r: 'sikdang' },
+    { h: '카페', m: 'cafe', r: 'kape' },
+    { h: '마트', m: 'supermarket', r: 'mateu' },
+    { h: '병원', m: 'hospital', r: 'byeongwon' },
+    { h: '약국', m: 'pharmacy', r: 'yakguk' }
+  ];
+
+  const basicPhrases: Entry[] = [
+    { h: '안녕', m: 'hi/bye (casual)', r: 'annyeong' },
+    { h: '안녕하세요', m: 'hello (polite)', r: 'annyeonghaseyo', ek: '안녕하세요! 반갑습니다.', ee: 'Hello! Nice to meet you.' },
+    { h: '감사합니다', m: 'thank you (formal)', r: 'gamsahamnida' },
+    { h: '고마워요', m: 'thank you (polite)', r: 'gomawoyo' },
+    { h: '죄송합니다', m: 'I’m sorry (formal)', r: 'joesonghamnida' },
+    { h: '미안해요', m: 'sorry (polite)', r: 'mianhaeyo' },
+    { h: '괜찮아요', m: 'it’s okay / no problem', r: 'gwaenchanayo' },
+    { h: '주세요', m: 'please (give me)', r: 'juseyo', ek: '물 주세요.', ee: 'Water, please.' },
+    { h: '얼마예요?', m: 'how much is it?', r: 'eolmayeyo' },
+    { h: '어디예요?', m: 'where is it?', r: 'eodiyeyo' },
+    { h: '맛있어요', m: 'it’s delicious', r: 'masisseoyo' },
+    { h: '매워요', m: 'it’s spicy', r: 'maewoyo' },
+    { h: '있어요', m: 'there is / I have', r: 'isseoyo' },
+    { h: '없어요', m: 'there isn’t / I don’t have', r: 'eopseoyo' },
+    { h: '도와주세요', m: 'please help', r: 'dowajuseyo' },
+    { h: '천천히 말해 주세요', m: 'please speak slowly', r: 'cheoncheonhi malhae juseyo' },
+    { h: '영수증 주세요', m: 'receipt, please', r: 'yeongsujeung juseyo' },
+    { h: '화장실 어디예요?', m: 'where is the bathroom?', r: 'hwajangsil eodiyeyo' }
+  ];
+
+  // -------------------------
+  // INTERMEDIATE: verbs/adj/adv/particles/cost
+  // -------------------------
+  const verbs: Entry[] = [
+    { h: '하다', m: 'to do', r: 'hada' },
+    { h: '주다', m: 'to give', r: 'juda' },
+    { h: '받다', m: 'to receive', r: 'batda' },
+    { h: '가다', m: 'to go', r: 'gada' },
+    { h: '오다', m: 'to come', r: 'oda' },
+    { h: '먹다', m: 'to eat', r: 'meokda', ek: '밥을 먹어요.', ee: 'I eat a meal.' },
+    { h: '마시다', m: 'to drink', r: 'masida' },
+    { h: '자다', m: 'to sleep', r: 'jada' },
+    { h: '일어나다', m: 'to get up', r: 'ireonada' },
+    { h: '만나다', m: 'to meet', r: 'mannada' },
+    { h: '생각하다', m: 'to think', r: 'saenggakhada' },
+    { h: '좋아하다', m: 'to like', r: 'joahada' },
+    { h: '싫어하다', m: 'to dislike', r: 'sireo-hada' },
+    { h: '알다', m: 'to know', r: 'alda' },
+    { h: '이해하다', m: 'to understand', r: 'ihae-hada' },
+    // 하다 compounds
+    { h: '운동하다', m: 'to exercise', r: 'undong-hada' },
+    { h: '공부하다', m: 'to study', r: 'gongbu-hada' },
+    { h: '요리하다', m: 'to cook', r: 'yori-hada' },
+    { h: '청소하다', m: 'to clean', r: 'cheongso-hada' },
+    { h: '결정하다', m: 'to decide', r: 'gyeoljeong-hada' },
+    { h: '도착하다', m: 'to arrive', r: 'dochag-hada' },
+    { h: '출발하다', m: 'to depart', r: 'chulbal-hada' },
+    { h: '운전하다', m: 'to drive', r: 'unjeon-hada' }
+  ];
+
+  const adjectives: Entry[] = [
+    { h: '크다', m: 'to be big', r: 'keuda' },
+    { h: '작다', m: 'to be small', r: 'jakda' },
+    { h: '빠르다', m: 'to be fast', r: 'ppareuda' },
+    { h: '느리다', m: 'to be slow', r: 'neurida' },
+    { h: '좋다', m: 'to be good', r: 'jota' },
+    { h: '나쁘다', m: 'to be bad', r: 'nappeuda' },
+    { h: '행복하다', m: 'to be happy', r: 'haengbok-hada' },
+    { h: '슬프다', m: 'to be sad', r: 'seulpeuda' },
+    { h: '멀다', m: 'to be far', r: 'meolda' },
+    { h: '가깝다', m: 'to be near', r: 'gakkapda' }
+  ];
+
+  const adverbs: Entry[] = [
+    { h: '천천히', m: 'slowly', r: 'cheoncheonhi' },
+    { h: '빨리', m: 'quickly', r: 'ppalli' },
+    { h: '조용히', m: 'quietly', r: 'joyonghi' },
+    { h: '완전히', m: 'completely', r: 'wanjeonhi' },
+    { h: '특별히', m: 'especially', r: 'teukbyeolhi' },
+    { h: '항상', m: 'always', r: 'hangsang' },
+    { h: '가끔', m: 'sometimes', r: 'gakkeum' },
+    { h: '보통', m: 'usually', r: 'botong' },
+    { h: '자주', m: 'often', r: 'jaju' }
+  ];
+
+  const particles: Entry[] = [
+    { h: '은/는', m: 'topic marker', r: 'eun/neun' },
+    { h: '이/가', m: 'subject marker', r: 'i/ga' },
+    { h: '을/를', m: 'object marker', r: 'eul/reul' },
+    { h: '에', m: 'at/in/on; to (time/place/destination)', r: 'e' },
+    { h: '에서', m: 'at/in/from (location/origin)', r: 'eseo' },
+    { h: '로/으로', m: 'toward; by/with (method)', r: 'ro/euro' },
+    { h: '하고', m: 'and/with', r: 'hago' },
+    { h: '부터', m: 'from (start)', r: 'buteo' },
+    { h: '까지', m: 'until (end)', r: 'kkaji' },
+    { h: '에게/한테', m: 'to (recipient)', r: 'ege/hante' }
+  ];
+
+  const costFamily: Entry[] = [
+    { h: '비용', m: 'cost/expense', r: 'biyong' },
+    { h: '생활비', m: 'living expenses', r: 'saenghwalbi' },
+    { h: '식비', m: 'food expenses', r: 'sikbi' },
+    { h: '학비', m: 'tuition', r: 'hakbi' },
+    { h: '여행비', m: 'travel expenses', r: 'yeohaengbi' },
+    { h: '이사 비용', m: 'moving expenses', r: 'isa biyong' },
+    { h: '결혼 비용', m: 'wedding expenses', r: 'gyeolhon biyong' }
+  ];
+
+  // Build beginner deck
+  const beginnerCards: Card[] = [
+    ...toCards(beginner!.id, people, ['people']),
+    ...toCards(beginner!.id, family, ['family']),
+    ...toCards(beginner!.id, objects, ['objects']),
+    ...toCards(beginner!.id, transport, ['transport']),
+    ...toCards(beginner!.id, places, ['places']),
+    ...toCards(beginner!.id, basicPhrases, ['phrase'])
+  ];
+
+  // Build intermediate deck
   const intermediateCards: Card[] = [
-    mk(inter.id, '저는 학생이에요.', 'I am a student.', 'jeoneun haksaeng-ieyo', '저는 학생이에요.', 'I am a student.', ['intro','grammar']),
-    mk(inter.id, '저는 한국 사람이에요.', 'I am Korean.', 'jeoneun hanguk saram-ieyo', '', '', ['intro']),
-    mk(inter.id, '저는 미국에서 왔어요.', 'I came from the USA.', 'jeoneun migug-eseo wasseoyo', '', '', ['travel','intro']),
-    mk(inter.id, '이것은 책이에요.', 'This is a book.', 'igeoseun chaeg-ieyo', '', '', ['grammar','demonstratives']),
-    mk(inter.id, '저는 밥을 먹어요.', 'I eat (rice)/I eat a meal.', 'jeoneun babeul meogeoyo', '', '', ['verbs']),
-    mk(inter.id, '저는 친구를 만나요.', 'I meet a friend.', 'jeoneun chingureul mannayo', '', '', ['verbs']),
-    mk(inter.id, '저는 영화를 봐요.', 'I watch a movie.', 'jeoneun yeonghwareul bwayo', '', '', ['verbs']),
-    mk(inter.id, '날씨가 좋아요.', 'The weather is nice.', 'nalssiga joayo', '', '', ['adjectives']),
-    mk(inter.id, '비가 와요.', 'It is raining.', 'biga wayo', '', '', ['weather']),
-    mk(inter.id, '학교에 가요.', 'I go to school.', 'hakgyoe gayo', '', '', ['location']),
-    mk(inter.id, '저는 커피를 마셔요.', 'I drink coffee.', 'jeoneun keopireul masyeoyo', '', '', ['verbs','food']),
-    mk(inter.id, '저는 음악을 들어요.', 'I listen to music.', 'jeoneun eumageul deureoyo', '', '', ['verbs']),
-    mk(inter.id, '책을 읽어요.', 'I read a book.', 'chaegeul ilgeoyo', '', '', ['verbs']),
-    mk(inter.id, '운동을 해요.', 'I exercise.', 'undongeul haeyo', '', '', ['verbs','health']),
-    mk(inter.id, '저는 요리를 해요.', 'I cook.', 'jeoneun yorireul haeyo', '', '', ['verbs','food']),
-    mk(inter.id, '산에 가요.', 'I go to the mountain.', 'sane gayo', '', '', ['location','nature']),
-    mk(inter.id, '바다에 가요.', 'I go to the sea.', 'badae gayo', '', '', ['location','nature']),
-    mk(inter.id, '저는 여행을 해요.', 'I travel.', 'jeoneun yeohaengeul haeyo', '', '', ['travel']),
-    mk(inter.id, '한국어를 공부해요.', 'I study Korean.', 'hangug-eoreul gongbuhaeyo', '', '', ['study']),
-    mk(inter.id, '저는 쉬어요.', 'I rest.', 'jeoneun swi-eoyo', '', '', ['health'])
+    ...toCards(intermediate!.id, verbs, ['verb']),
+    ...toCards(intermediate!.id, adjectives, ['adjective']),
+    ...toCards(intermediate!.id, adverbs, ['adverb']),
+    ...toCards(intermediate!.id, particles, ['particle']),
+    ...toCards(intermediate!.id, costFamily, ['cost'])
   ];
 
   await db.cards.bulkAdd([...beginnerCards, ...intermediateCards]);

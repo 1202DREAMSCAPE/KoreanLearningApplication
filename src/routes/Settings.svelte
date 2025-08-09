@@ -153,13 +153,13 @@
               type="number"
               min="1"
               bind:value={settings.dailyGoal}
-              class="w-28 rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-right outline-none ring-0 focus:border-slate-700"
+              class="w-28 rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-center outline-none ring-0 focus:border-slate-700"
             /> 
         </div>
         <button
           on:click={save}
           disabled={saving}
-          class="rounded-xl bg-sky-600 px-4 py-2 mt-2 font-medium text-white shadow hover:bg-sky-500 disabled:opacity-60"
+          class="rounded-xl w-28 bg-green-600 px-4 py-2 mt-2 font-medium text-white shadow hover:bg-green-500 disabled:opacity-60"
         >
           {saving ? 'Saving…' : 'Save'}
         </button>
@@ -181,7 +181,7 @@
           <p class="text-xs text-slate-400 mb-3">Download your cards as a JSON file.</p>
           <button
             on:click={exportCards}
-            class="rounded-xl bg-green-600 px-4 py-2 text-white hover:bg-green-500"
+            class="rounded-xl text-sm bg-blue-600 px-4 py-2 text-white hover:bg-blue-500"
           >
             Export cards as JSON
           </button>
@@ -197,7 +197,7 @@
           <div class="flex items-center gap-3">
             <label
               for="fileJSON"
-              class="cursor-pointer rounded-xl border border-slate-700 bg-slate-800/70 px-4 py-2 text-slate-100 hover:bg-slate-700/80"
+              class="cursor-pointer text-sm rounded-xl border border-slate-700 bg-slate-800/70 px-4 py-2 text-slate-100 hover:bg-slate-700/80"
             >
               Choose file…
             </label>

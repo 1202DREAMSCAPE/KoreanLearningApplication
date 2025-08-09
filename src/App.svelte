@@ -31,7 +31,7 @@
     <!-- Brand + desktop nav -->
     <div class="flex items-center justify-between">
       <a href="#/" class="flex items-center gap-2">
-        <span class="text-lg font-semibold">🇰🇷 Korean SRS</span>
+        <span class="text-lg font-semibold">🇰🇷 Korean Spaced Repition Software</span>
       </a>
 
       <!-- Desktop -->
@@ -81,7 +81,9 @@
 </main>
 
 <footer class="shell mx-auto max-w-5xl px-4 pb-10 text-center">
-  <div class="text-xs text-slate-500">Built locally · Your data stays on your device</div>
+  <div class="text-xs text-slate-500">
+    Built locally · Your data stays on your device · &copy; 2025 1202DREAMSCAPE. All rights reserved.
+  </div>
 </footer>
 
 <Toasts />
